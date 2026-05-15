@@ -1,12 +1,16 @@
 # 5.2 SERVICIO DE DIRECTORIO DE LINUX
 
-1. [Dominios](#dominios)
-2. [LDAP](#ldap)
-3. [Instalar y configurar](#instalar-y-configurar)
-4. [Añadir cliente en OpenLDAP](#añadir-cliente-en-openldap)
-5. [Dominios Samba](#dominios-samba)
-6. [Configurar Samba](#configurar-samba)
-7. [Comprobar dominio Samba](#comprobar-dominio-samba)
+- [5.2 SERVICIO DE DIRECTORIO DE LINUX](#52-servicio-de-directorio-de-linux)
+- [DOMINIOS](#dominios)
+- [LDAP](#ldap)
+- [OPENLDAP](#openldap)
+- [LDAP](#ldap-1)
+- [INSTALAR Y CONFIGURAR](#instalar-y-configurar)
+  - [Comprobaciones:](#comprobaciones)
+- [AÑADIR CLIENTE EN OPENLDAP](#añadir-cliente-en-openldap)
+- [DOMINIOS SAMBA](#dominios-samba)
+- [CONFIGURAR SAMBA](#configurar-samba)
+- [COMPROBAR DOMINIO SAMBA](#comprobar-dominio-samba)
 
 ![1.png](imagenes/1.png)
 
@@ -209,6 +213,7 @@ Instalaremos los siguientes paquetes:
 - ldap-utils: Contiene herramientas de línea de comandos que te permiten interactuar con servidores LDAP, realizar búsquedas, administrar entradas, entre otras operaciones.
   
 ```
+bash
 :~# apt install slapd ldap-utils
 ```
 
@@ -217,6 +222,7 @@ dpkg-reconfigure slapd: Cuando ejecutas este comando en la terminal, se abrirá 
 
 
 ```
+bash
 :~# dpkg-reconfigure slapd
 ```
 
@@ -234,7 +240,12 @@ El comando slapcat es una herramienta de línea de comandos utilizada en sistema
 
 ☐ -f archivo: Utiliza un archivo de configuración alternativo.
 
-![15.png](imagenes/15.png)
+````
+bash
+:~# slapcat | more
+````
+
+
 
 ![16.png](imagenes/16.png)
 
@@ -253,12 +264,22 @@ A continuación, añadir la información a la base de datos OpenLDAP. Esto se ha
 - ☐ -D nombre distinguido con el que nos conectamos a LDAP (ponemos el del administrador).
 - ☐ -W pide la contraseña de forma interactiva.
 - ☐ -f fichero a cargar. En este caso: estructura base.ldif
+````
+bash
+:~# ldapadd -x -D cn=admin,dc=yeraym,dc=asir -W -f base.ldif
+````
 
 ![19.png](imagenes/19.png)
 
 A continuación, añadimos algunos usuarios más:
 
 ![20.png](imagenes/20.png) 
+
+````
+bash
+:~# ldapadd -x -D cn=admin,dc=yeraym,dc=asir -W -f alumnado.ldif
+````
+
 ![21.png](imagenes/21.png)
 
 ## Comprobaciones:
@@ -270,16 +291,29 @@ ldapmodify: permite añadir entradas o realizar modificaciones. Posibilita modif
 
 ![24.png](imagenes/24.png)
 
+````
+bash
+:~# ldapmodify -x -D 'cn=admin,dcyeraym,dc=asir' -W -f modifica.ldif
+````
+
 ![25.png](imagenes/25.png)
 
 ldapsearch: realiza consultas. Por ejemplo, a continuación, se muestran los nombres comunes y los correos de todos los usuarios del dominio:
 
 - `-L` → salida en formato LDIF / `-LL` → elimina comentarios / `-LLL` → elimina también las líneas en blanco
 - `-b` → define desde dónde buscar (Base DN)
+````
+bash
+:~# ldapsearch -xLLL -b "dc=yeraym,dc=asir" "uid=*" cn mail
+````
 
 ![26.png](imagenes/26.png)
 
 ldapdelete: permite borrar entradas del directorio mediante un fichero o desde línea de comando.
+````
+bash
+:~# ldapdelete -x -W -D 'cn=admin,dc=yeraym,dc=asir' "uid=aluyeraym04,ou=asir1,dc=yeraym,dc=asir"
+````
 
 ![27.png](imagenes/27.png)
 
@@ -290,7 +324,10 @@ Para gestionar LDAP mediante una interfaz gráfica, puedes considerar varias opc
 - JXplorer: Herramienta Java gratuita y de código abierto que proporciona una interfaz gráfica para la administración de directorios LDAP.
 - LDAP Account Manager (LAM): Herramienta que ofrece una interfaz web para administrar cuentas y grupos en un directorio LDAP.
 
-![28.png](imagenes/28.png)
+````
+bash
+:~# apt install phpldapadmin -y
+````
 
 ![29.png](imagenes/29.png)
 
@@ -318,7 +355,11 @@ En Ubuntu, necesitaremos ajustar el comportamiento de los servicios NSS y PAM en
 ☐ libpam-ldap: Que facilitará la autenticación con LDAP a los usuarios que utilicen PAM.
 ☐ ldap-utils: Facilita la interacción de LDAP desde cualquier máquina de la red.
 
-![33.png](imagenes/33.png)
+````
+bash
+:~# apt install libnss-ldap libpam-ldap ldap-utils -y
+````
+
 
 En el primer paso, nos solicita la dirección URi del servidor LDAP. En nuestro caso, escribiremos la dirección IP del servidor y sustituiremos el protocolo ldapi:// por ldap://
 
@@ -386,10 +427,20 @@ session optional &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&em
 ![43.png](imagenes/43.png)
 
 Una vez terminada la instalación, ya podemos activar el servicio libnss-ldap.
+````
+bash
+:~# systemctl start libnss-ldap
+:~# systemctl status libnss-ldap
+````
 
 ![44.png](imagenes/44.png)
 
 La forma más sencilla de comprobar que podemos iniciar sesión en el servidor usando LDAP consiste en arrancar el sistema en modo texto (o arrancarlo en modo gráfico y usar la combinación de teclas alt + ctrl + f1 para ir a una consola de texto) y escribir las credenciales de un usuario LDAP.
+
+````
+bash
+:~# whoami
+````
 
 ![45.png](imagenes/45.png)
 
@@ -421,20 +472,28 @@ Procedimiento para implementar un Controlador de dominio en Ubuntu, donde los eq
 
 
 Actualizar el sistema
-
-![49.png](imagenes/49.png)
-
-
+````
+bash
+:~# apt update && apt upgrade -y
+````
 
 Establecer un nombre adecuado para el servidor:
 **nombre-dc-smb**
-
+````
+bash
+:~# hostnamectl
+:~# cat /etc/hosts
+````
 ![50.png](imagenes/50.png)
 
 
 
 Lo siguiente será configurar las características de red según las necesidades del servidor. Recuerda que un servidor debe tener IP fija.
-
+````
+bash
+:~# ip a
+;~# ping -c3 www.google.com
+````
 ![51.png](imagenes/51.png)
 
 Necesitaremos disponer de los siguientes paquetes preinstalados antes de comenzar con el proceso de configuración, aunque todos ellos están en los repositorios:
@@ -443,7 +502,10 @@ Necesitaremos disponer de los siguientes paquetes preinstalados antes de comenza
 ☐ smbclient: clientes de línea de comandos para SMB/CIFS.
 ☐ krb5-config: Archivos de configuración para Kerberos Version 5.
 ☐ winbind: Servicio para resolver información sobre usuarios y grupos de servidores Windows NT.
-
+````
+bash
+:~# apt install samba krb5-config winbind smbclient
+````
 ![52.png](imagenes/52.png)
 
 ☐ En la instalación de Kerberos, nos preguntará por el reino (realm), se refiere al nombre del dominio:
@@ -456,12 +518,19 @@ Necesitaremos disponer de los siguientes paquetes preinstalados antes de comenza
 
 Debemos cambiar de nombre el archivo smb.conf que contiene la configuración predeterminada, para evitar que Samba intente usarlo durante el proceso de configuración y estar seguros de que todos los datos del nuevo archivo de configuración se producen desde cero. Además, también podremos recuperarlo en caso de que algo salga mal.
 
-![54.png](imagenes/54.png)
+````
+bash
+:~# mv /etc/samba/smb.conf /etc/samba/smb.conf.old
+````
+
 
 Ahora ya estamos listos para promover nuestro equipo como controlador de un dominio Samba 4 que actúe como un reemplazo completo de un servidor de dominio de Active Directory.
 
 Para promover nuestro equipo como controlador de un dominio lograrlo, usaremos el comando **samba-tool domain provision**, y lo haremos de forma interactiva, para que sea el propio comando el que nos sugiera sus valores predeterminados. Así, si éstos coinciden con los que nosotros esperamos, será muy probable que los pasos anteriores hayan sido los correctos.
-
+````
+bash
+:~# samba-tool domain provision
+````
 ![55.png](imagenes/55.png)
 
 ![56.png](imagenes/56.png)
@@ -469,16 +538,30 @@ Para promover nuestro equipo como controlador de un dominio lograrlo, usaremos e
 # CONFIGURAR SAMBA
 
 Con el anterior comando se generó el archivo de configuración de Kerberos en la ruta /var/lib/samba/private/krb5.conf. Solo tenemos que copiarlo a la ubicación adecuada.
-
-![57.png](imagenes/57.png)
+````
+bash
+:~# cp /var/lib/samba/private/krb5.conf /etc
+````
 
 Seguimos ajustando la resolución de nombres, y comenzaremos deteniendo los servicios implicados y deshabilitándolos para que no vuelvan a iniciarse si reiniciamos el equipo.
-
+````
+bash
+:~# systemctl stop smbd nmbd winbind systemd-resolved
+````
 ![58.png](imagenes/58.png)
 
 
 Aseguramos de que el servicio **samba-ad-dc** se podrá iniciar sin dificultades, evitando cualquier enmascaramiento que pueda existir y eliminamos el archivo **resolv.conf** que, en realidad, será un enlace a `../run/systemd/resolve/stub-resolv.conf` y generamos uno nuevo con escribiremos los valores adecuados para nuestro dominio y por último activamos el servicio:
+````
+bash
+:~# systemctl unmask samba-ad-dc
+:~# ls -l /etc/resolv.conf
+:~# rm /etc/resolv.conf
+:~#  nano /etc/resolv.conf
 
+:~# systemctl start samba-ad-dc
+:~#  systemctl status samba-ad-dc
+````
 ![59.png](imagenes/59.png)
 
 Una vez finalizada la instalación vamos a proceder a la comprobación del dominio de Samba realizando las siguientes tareas:
@@ -494,7 +577,11 @@ Una vez finalizada la instalación vamos a proceder a la comprobación del domin
 ☐ El comando samba-tool domain level show te permite verificar el nivel funcional del dominio en tu controlador de dominio Samba. En este caso equivale a una instalación Windows Server 2008 R2.
 
 ☐ A continuación, crearemos un nuevo usuario en el dominio llamado nombre01.
-
+````
+bash
+:~# samba-tool domain level show
+:~# samba-tool user create yeray01
+````
 ![60.png](imagenes/60.png)
 
 Comprobaciones del servidor DNS interno del propio Samba, mas concretamente de los registros SRV encargados de almacenar, dentro de la base de datos DNS, la relación entre el nombre de un servicio y el nombre DNS del ordenador que ofrece dicho servicio.
@@ -502,18 +589,35 @@ Comprobaciones del servidor DNS interno del propio Samba, mas concretamente de l
 ☐ Comprobar el servicio LDAP sobre el protocolo TCP.
 ☐ Comprobar el registro SRV para el protocolo Kerberos sobre UDP.
 ☐ Comprobar la resolución del nombre de nuestro servidor.
-
+````
+bash
+:~# host -t SRV _ldap._tcp.yeray.sistemas
+:~# host -t SRV _kerberos._udp.yeray.sistemas
+:~# host -t A yeray-dc-smb.yeray.sistemas
+````
 ![61.png](imagenes/61.png)
 
 Ahora nos aseguramos de que se resuelven correctamente los nombres y las IPs del dominio. Al ejecutar nslookup sin argumentos, aparece un signo ‘mayor que’ a modo de prompt, donde podemos ir escribiendo argumentos.
+````
+bash
+:~# nslookup
+````
 
 ![62.png](imagenes/62.png)
 
 Para comprobar el funcionamiento de Kerberos podemos usar el comando smbclient para comprobar los servicios que puede obtener un determinado usuario.
-
+````
+bash
+:~# smbclient -L yeray-dc-smb.yeray.sistemas -U 'administrador'
+````
 ![63.png](imagenes/63.png)
 
 Comprobar el inicio de sesión en el servidor verificando la integridad del archivo de configuración de Samba con el comando testparm
+````
+bash
+:~# smbclient //localhost/netlogon -U 'administrador'
+:~# testparm
+````
 
 ![64.png](imagenes/64.png)
 
